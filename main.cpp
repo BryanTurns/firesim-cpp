@@ -17,15 +17,16 @@ typedef struct Vertex
     vec2 pos;
     vec3 col;
 } Vertex;
- 
+
+
 static const Vertex vertices[6] =
 {
-    { { -1.f, -1.0f}, { 0.f, 0.f, 0.f } },
-    { {  -1.f, 1.f}, { 0.f, 0.f, 0.f } },
-    { {   1.f,  -1.f}, { 0.f, 0.f, 0.f } },
-    { {  -1.f, 1.f}, { 1.f, 1.f, 1.f } },
-    { {  1.f, 1.f}, { 1.f, 1.f, 1.f } },
-    { {   1.f,  -1.f}, { 1.f, 1.f, 1.f } }
+    { { -0.5f, -.5f}, { 0.f, 0.f, 0.f } }, // Bottom left: 0
+    { {  -.5f, .5f}, { 0.f, 0.f, 0.f } }, // Top left: 1
+    { {   .5f,  -.5f}, { 0.f, 0.f, 0.f } }, // Bottom right: 2
+    { {  -0.5f, 0.5f}, { 0.f, 0.f, 0.f } }, // Top left: 3
+    { {  .5f, .5f}, { 0.f, 0.f, 0.f } }, // Top right: 4
+    { {   0.5f,  -0.5f}, { 0.f, 0.f, 0.f } } // Bottom right: 5
 };
 
 unsigned int indices[] = {
@@ -53,6 +54,9 @@ static const char* fragment_shader_text =
 "    fragment = vec4(color, 1.0);\n"
 "}\n";
  
+Vertex *genGrid(int tile_count);
+void checkGLError(const char *);
+
 static void error_callback(int error, const char* description)
 {
     fprintf(stderr, "Error: %s\n", description);
@@ -96,13 +100,10 @@ int main(void)
     gladLoadGL(glfwGetProcAddress);
     glfwSwapInterval(1);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);  
-
- 
    
     const GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertex_shader, 1, &vertex_shader_text, NULL);
     glCompileShader(vertex_shader);
-
     // Error checking
     glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &success);
     if(!success)
@@ -135,19 +136,23 @@ int main(void)
     
     const GLint vpos_location = glGetAttribLocation(program, "vPos");
     const GLint vcol_location = glGetAttribLocation(program, "vCol");
- 
+    
+    int tile_count = 10;
+    int vertex_count = tile_count*tile_count*2*3;
+    Vertex *grid = genGrid(tile_count);
+
     // GLuint VBO;
     GLuint VAO, VBO, EBO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
     glGenBuffers(1, &EBO);
 
-
     glBindVertexArray(VAO);
-
+    
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
+    checkGLError("bind");
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)*vertex_count, grid, GL_STATIC_DRAW);
+    checkGLError("data");
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
     // Locations of the vpos on GPU
@@ -159,7 +164,7 @@ int main(void)
     glEnableVertexAttribArray(vcol_location);
     glVertexAttribPointer(vcol_location, 3, GL_FLOAT, GL_FALSE,
                           sizeof(Vertex), (void*) offsetof(Vertex, col));
-     
+    
     while (!glfwWindowShouldClose(window))
     {
         int width, height;
@@ -167,12 +172,29 @@ int main(void)
         const float ratio = width / (float) height;
  
         glViewport(0, 0, width, height);
+        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
  
         glUseProgram(program);
         glBindVertexArray(VAO);
-        // glDrawArrays(GL_TRIANGLES, 0, 6);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        checkGLError("bind VAO");
+        glDrawArrays(GL_TRIANGLES, 0, vertex_count);
+        // GLenum err = glGetError();
+        // if (err == GL_INVALID_ENUM) 
+        //     std::cout << "ENUM" << std::endl;
+        // else if (err == GL_INVALID_OPERATION) 
+        //     std::cout << "OPERATION" << std::endl;
+        // else if (err == GL_INVALID_VALUE)
+        //     std::cout << "VALUE" << std::endl;
+        // else if (err == GL_INVALID_FRAMEBUFFER_OPERATION)
+        //     std::cout << "FRAME OPP" << std::endl;
+        // else if (err == GL_INVALID_OPERATION) 
+        //     std::cout<< "OPP" << std::endl;
+        // else if (err == GL_OUT_OF_MEMORY)
+        //     std::cout << "MEMORY" << std::endl;
+        // std::cout << err << std::endl;
+
+        // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
  
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -184,10 +206,66 @@ int main(void)
     exit(EXIT_SUCCESS);
 }
  
-int genGrid(int t_count, Vertex verticies[]) {
-    double increment = 1.f/10.f;
+Vertex *genGrid(int tile_count) {
+    float increment = 1.0/tile_count;
 
-    for (int i = 0; i < t_count; i++) {
+    // Two triangles per tile, 3 vertexes per triangle
+    Vertex *grid = (Vertex *) std::malloc(sizeof(Vertex)*2*3*tile_count*tile_count);
+    // Vertex grid[tile_count*2*3];
+
+    for (int i = 0; i < tile_count; i++) {
+        int curRow = i*tile_count*2*3;
+        for (int j = 0; j < tile_count; j++) {
+            float base_x = j*increment;
+            float base_y = i*increment;
+            int start_index = curRow + j*6;
+            // std::cout << "Sum: " << j+i << std::endl;
+            // std::cout << "Mod: " << (j+i)
+
+            if ((j+i) % 2== 0) {
+                // First Triangle
+                grid[start_index] = {{base_x, base_y}, {0.f, 0.f, 0.f}}; // Bottom left
+                grid[start_index+1] = {{base_x+increment, base_y}, {0.f, 0.f, 0.f}}; // Top left
+                grid[start_index+2] = {{base_x, base_y+increment}, {0.f, 0.f, 0.f}}; // Bottom right
+                // Second Triangle
+                grid[start_index+3] = {{base_x+increment, base_y+increment}, {0.f, 0.f, 0.f}}; // Top right
+                grid[start_index+4] = {{base_x+increment, base_y}, {0.f, 0.f, 0.f}}; // Bottom right
+                grid[start_index+5] = {{base_x, base_y+increment}, {0.f, 0.f, 0.f}}; // Top left
+            }
+            else {
+                // First Triangle
+                grid[start_index] = {{base_x, base_y}, {1.f, 1.f, 1.f}}; // Bottom left
+                grid[start_index+1] = {{base_x+increment, base_y}, {1.f, 1.f, 1.f}}; // Top left
+                grid[start_index+2] = {{base_x, base_y+increment}, {1.f, 1.f, 1.f}}; // Bottom right
+                // Second Triangle
+                grid[start_index+3] = {{base_x+increment, base_y+increment}, {1.f, 1.f, 1.f}}; // Top right
+                grid[start_index+4] = {{base_x+increment, base_y}, {1.f, 1.f, 1.f}}; // Bottom right
+                grid[start_index+5] = {{base_x, base_y+increment}, {1.f, 1.f, 1.f}}; // Top left
+            }
+        }
         
+        
+       
+    }
+    return grid;
+}
+
+void checkGLError(const char *text) {
+    GLenum err;
+    
+    while ((err = glGetError()) != GL_NO_ERROR) {
+        std::cout << text << ": ";
+        if (err == GL_INVALID_ENUM) 
+            std::cout << "ENUM" << std::endl;
+        else if (err == GL_INVALID_OPERATION) 
+            std::cout << "OPERATION" << std::endl;
+        else if (err == GL_INVALID_VALUE)
+            std::cout << "VALUE" << std::endl;
+        else if (err == GL_INVALID_FRAMEBUFFER_OPERATION)
+            std::cout << "FRAME OPP" << std::endl;
+        else if (err == GL_INVALID_OPERATION) 
+            std::cout<< "OPP" << std::endl;
+        else if (err == GL_OUT_OF_MEMORY)
+            std::cout << "MEMORY" << std::endl;
     }
 }

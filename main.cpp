@@ -20,17 +20,17 @@ typedef struct Vertex
  
 static const Vertex vertices[6] =
 {
-    { { -1.f, -1.0f}, { 1.f, 0.f, 0.f } },
-    { {  -1.f, 1.f}, { 0.f, 1.f, 0.f } },
-    { {   1.f,  -1.f}, { 1.f, 0.f, 1.f } },
-    { {  -1.f, 1.f}, { 1.f, 0.f, 0.f } },
-    { {  1.f, 1.f}, { 1.f, 1.f, 0.f } },
-    { {   1.f,  -1.f}, { 1.f, 0.f, 0.f } }
+    { { -1.f, -1.0f}, { 0.f, 0.f, 0.f } },
+    { {  -1.f, 1.f}, { 0.f, 0.f, 0.f } },
+    { {   1.f,  -1.f}, { 0.f, 0.f, 0.f } },
+    { {  -1.f, 1.f}, { 1.f, 1.f, 1.f } },
+    { {  1.f, 1.f}, { 1.f, 1.f, 1.f } },
+    { {   1.f,  -1.f}, { 1.f, 1.f, 1.f } }
 };
 
 unsigned int indices[] = {
     0, 1, 2,
-    1, 2, 4
+    3, 4, 5
 };
  
 static const char* vertex_shader_text =
@@ -98,12 +98,7 @@ int main(void)
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);  
 
  
-    // NOTE: OpenGL error checks have been omitted for brevity
-    GLuint VBO;
-    glGenBuffers(1, &VBO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
- 
+   
     const GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertex_shader, 1, &vertex_shader_text, NULL);
     glCompileShader(vertex_shader);
@@ -141,9 +136,20 @@ int main(void)
     const GLint vpos_location = glGetAttribLocation(program, "vPos");
     const GLint vcol_location = glGetAttribLocation(program, "vCol");
  
-    GLuint VAO;
+    // GLuint VBO;
+    GLuint VAO, VBO, EBO;
     glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+    glGenBuffers(1, &EBO);
+
+
     glBindVertexArray(VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
     // Locations of the vpos on GPU
     glEnableVertexAttribArray(vpos_location);
     // Tells the shader how to interpret the array of verticies. 
@@ -153,7 +159,7 @@ int main(void)
     glEnableVertexAttribArray(vcol_location);
     glVertexAttribPointer(vcol_location, 3, GL_FLOAT, GL_FALSE,
                           sizeof(Vertex), (void*) offsetof(Vertex, col));
- 
+     
     while (!glfwWindowShouldClose(window))
     {
         int width, height;
@@ -165,7 +171,8 @@ int main(void)
  
         glUseProgram(program);
         glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+        // glDrawArrays(GL_TRIANGLES, 0, 6);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
  
         glfwSwapBuffers(window);
         glfwPollEvents();

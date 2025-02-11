@@ -137,7 +137,7 @@ int main(void)
     const GLint vpos_location = glGetAttribLocation(program, "vPos");
     const GLint vcol_location = glGetAttribLocation(program, "vCol");
     
-    int tile_count = 10;
+    int tile_count = 100;
     int vertex_count = tile_count*tile_count*2*3;
     Vertex *grid = genGrid(tile_count);
 
@@ -145,7 +145,7 @@ int main(void)
     GLuint VAO, VBO, EBO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
+    // glGenBuffers(1, &EBO);
 
     glBindVertexArray(VAO);
     
@@ -153,8 +153,8 @@ int main(void)
     checkGLError("bind");
     glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)*vertex_count, grid, GL_STATIC_DRAW);
     checkGLError("data");
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    // glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
     // Locations of the vpos on GPU
     glEnableVertexAttribArray(vpos_location);
     // Tells the shader how to interpret the array of verticies. 
@@ -179,48 +179,28 @@ int main(void)
         glBindVertexArray(VAO);
         checkGLError("bind VAO");
         glDrawArrays(GL_TRIANGLES, 0, vertex_count);
-        // GLenum err = glGetError();
-        // if (err == GL_INVALID_ENUM) 
-        //     std::cout << "ENUM" << std::endl;
-        // else if (err == GL_INVALID_OPERATION) 
-        //     std::cout << "OPERATION" << std::endl;
-        // else if (err == GL_INVALID_VALUE)
-        //     std::cout << "VALUE" << std::endl;
-        // else if (err == GL_INVALID_FRAMEBUFFER_OPERATION)
-        //     std::cout << "FRAME OPP" << std::endl;
-        // else if (err == GL_INVALID_OPERATION) 
-        //     std::cout<< "OPP" << std::endl;
-        // else if (err == GL_OUT_OF_MEMORY)
-        //     std::cout << "MEMORY" << std::endl;
-        // std::cout << err << std::endl;
-
-        // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
  
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
  
     glfwDestroyWindow(window);
+    free(grid);
  
     glfwTerminate();
     exit(EXIT_SUCCESS);
 }
  
 Vertex *genGrid(int tile_count) {
-    float increment = 1.0/tile_count;
-
-    // Two triangles per tile, 3 vertexes per triangle
+    float increment = 2.0/tile_count;
     Vertex *grid = (Vertex *) std::malloc(sizeof(Vertex)*2*3*tile_count*tile_count);
-    // Vertex grid[tile_count*2*3];
 
     for (int i = 0; i < tile_count; i++) {
         int curRow = i*tile_count*2*3;
+        float base_y = i*increment-1;
         for (int j = 0; j < tile_count; j++) {
-            float base_x = j*increment;
-            float base_y = i*increment;
+            float base_x = j*increment-1;
             int start_index = curRow + j*6;
-            // std::cout << "Sum: " << j+i << std::endl;
-            // std::cout << "Mod: " << (j+i)
 
             if ((j+i) % 2== 0) {
                 // First Triangle

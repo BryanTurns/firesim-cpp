@@ -11,6 +11,8 @@
 
 #include <iostream>
 #include <cmath>
+#include <random>
+#include <chrono>
  
 typedef struct Vertex
 {
@@ -56,6 +58,7 @@ static const char* fragment_shader_text =
  
 Vertex *genGrid(int tile_count);
 void checkGLError(const char *);
+void updateGrid(Vertex *grid, int tile_count);
 
 static void error_callback(int error, const char* description)
 {
@@ -164,12 +167,16 @@ int main(void)
     glEnableVertexAttribArray(vcol_location);
     glVertexAttribPointer(vcol_location, 3, GL_FLOAT, GL_FALSE,
                           sizeof(Vertex), (void*) offsetof(Vertex, col));
+
+    
     
     while (!glfwWindowShouldClose(window))
     {
         int width, height;
         glfwGetFramebufferSize(window, &width, &height);
         const float ratio = width / (float) height;
+
+        updateGrid(grid, tile_count);
  
         glViewport(0, 0, width, height);
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -179,6 +186,8 @@ int main(void)
         glBindVertexArray(VAO);
         checkGLError("bind VAO");
         glDrawArrays(GL_TRIANGLES, 0, vertex_count);
+
+
  
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -190,42 +199,43 @@ int main(void)
     glfwTerminate();
     exit(EXIT_SUCCESS);
 }
+void startFire(int x, int y);
+
+void updateGrid(Vertex *grid, int vertex_count) {
+    for (int i = 0; i < vertex_count; i+= 6) {
+        if (grid[i].col[0] == 0)
+            continue;
+        
+        int SCALE_FACTOR = 1;
+        if (i > 0) {
+            
+        }
+
+    }
+}
  
 Vertex *genGrid(int tile_count) {
     float increment = 2.0/tile_count;
     Vertex *grid = (Vertex *) std::malloc(sizeof(Vertex)*2*3*tile_count*tile_count);
-
+    // Generate fuel amount per tile
+    srand( std::chrono::system_clock::now().time_since_epoch().count());
     for (int i = 0; i < tile_count; i++) {
         int curRow = i*tile_count*2*3;
         float base_y = i*increment-1;
         for (int j = 0; j < tile_count; j++) {
+            float fuel = ((((float)rand())/((float)RAND_MAX))/ 2.f) + 0.5f;
+
             float base_x = j*increment-1;
             int start_index = curRow + j*6;
-
-            if ((j+i) % 2== 0) {
-                // First Triangle
-                grid[start_index] = {{base_x, base_y}, {0.f, 0.f, 0.f}}; // Bottom left
-                grid[start_index+1] = {{base_x+increment, base_y}, {0.f, 0.f, 0.f}}; // Top left
-                grid[start_index+2] = {{base_x, base_y+increment}, {0.f, 0.f, 0.f}}; // Bottom right
-                // Second Triangle
-                grid[start_index+3] = {{base_x+increment, base_y+increment}, {0.f, 0.f, 0.f}}; // Top right
-                grid[start_index+4] = {{base_x+increment, base_y}, {0.f, 0.f, 0.f}}; // Bottom right
-                grid[start_index+5] = {{base_x, base_y+increment}, {0.f, 0.f, 0.f}}; // Top left
-            }
-            else {
-                // First Triangle
-                grid[start_index] = {{base_x, base_y}, {1.f, 1.f, 1.f}}; // Bottom left
-                grid[start_index+1] = {{base_x+increment, base_y}, {1.f, 1.f, 1.f}}; // Top left
-                grid[start_index+2] = {{base_x, base_y+increment}, {1.f, 1.f, 1.f}}; // Bottom right
-                // Second Triangle
-                grid[start_index+3] = {{base_x+increment, base_y+increment}, {1.f, 1.f, 1.f}}; // Top right
-                grid[start_index+4] = {{base_x+increment, base_y}, {1.f, 1.f, 1.f}}; // Bottom right
-                grid[start_index+5] = {{base_x, base_y+increment}, {1.f, 1.f, 1.f}}; // Top left
-            }
-        }
-        
-        
-       
+            // First Triangle
+            grid[start_index] = {{base_x, base_y}, {0.f, fuel, 0.f}}; // Bottom left
+            grid[start_index+1] = {{base_x+increment, base_y}, {0.f, fuel, 0.f}}; // Top left
+            grid[start_index+2] = {{base_x, base_y+increment}, {0.f, fuel, 0.f}}; // Bottom right
+            // Second Triangle
+            grid[start_index+3] = {{base_x+increment, base_y+increment}, {0.f, fuel, 0.f}}; // Top right
+            grid[start_index+4] = {{base_x+increment, base_y}, {0.f, fuel, 0.f}}; // Bottom right
+            grid[start_index+5] = {{base_x, base_y+increment}, {0.f, fuel, 0.f}}; // Top left
+        }    
     }
     return grid;
 }

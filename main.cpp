@@ -13,6 +13,10 @@
 #include <cmath>
 #include <random>
 #include <chrono>
+#include <thread>
+
+using namespace std::chrono_literals;
+
  
 typedef struct Vertex
 {
@@ -21,7 +25,7 @@ typedef struct Vertex
 } Vertex;
 
 
-static const Vertex vertices[6] =
+static const Vertex vertices_const[6] =
 {
     { { -0.5f, -.5f}, { 0.f, 0.f, 0.f } }, // Bottom left: 0
     { {  -.5f, .5f}, { 0.f, 0.f, 0.f } }, // Top left: 1
@@ -31,7 +35,7 @@ static const Vertex vertices[6] =
     { {   0.5f,  -0.5f}, { 0.f, 0.f, 0.f } } // Bottom right: 5
 };
 
-unsigned int indices[] = {
+unsigned int indices_const[] = {
     0, 1, 2,
     3, 4, 5
 };
@@ -57,8 +61,11 @@ static const char* fragment_shader_text =
 "}\n";
  
 Vertex *genGrid(int tile_count);
+unsigned int *genIndices(int vertex_count);
 void checkGLError(const char *);
+void startFire(Vertex *grid, int vertex_count);
 void updateGrid(Vertex *grid, int tile_count);
+inline int getGridIndex(int i, int j, int tile_count);
 
 static void error_callback(int error, const char* description)
 {
@@ -125,7 +132,6 @@ int main(void)
         glGetShaderInfoLog(fragment_shader, 512, NULL, infoLog);
         std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
     }
-    
     // Build the shader program for the GPU
     const GLuint program = glCreateProgram();
     glAttachShader(program, vertex_shader);
@@ -140,12 +146,13 @@ int main(void)
     const GLint vpos_location = glGetAttribLocation(program, "vPos");
     const GLint vcol_location = glGetAttribLocation(program, "vCol");
     
-    int tile_count = 100;
+    int tile_count = 1000;
     int vertex_count = tile_count*tile_count*2*3;
     Vertex *grid = genGrid(tile_count);
+    // unsigned int *indices = genIndices(vertex_count);
 
     // GLuint VBO;
-    GLuint VAO, VBO, EBO;
+    GLuint VAO, VBO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
     // glGenBuffers(1, &EBO);
@@ -154,7 +161,7 @@ int main(void)
     
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     checkGLError("bind");
-    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)*vertex_count, grid, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)*vertex_count, grid, GL_DYNAMIC_DRAW);
     checkGLError("data");
     // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     // glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
@@ -169,14 +176,17 @@ int main(void)
                           sizeof(Vertex), (void*) offsetof(Vertex, col));
 
     
-    
+    // startFire(grid, vertex_count);
+    startFire(grid, tile_count);
     while (!glfwWindowShouldClose(window))
     {
+        updateGrid(grid, tile_count);
         int width, height;
         glfwGetFramebufferSize(window, &width, &height);
         const float ratio = width / (float) height;
 
         updateGrid(grid, tile_count);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)*vertex_count, grid, GL_DYNAMIC_DRAW);
  
         glViewport(0, 0, width, height);
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -186,11 +196,12 @@ int main(void)
         glBindVertexArray(VAO);
         checkGLError("bind VAO");
         glDrawArrays(GL_TRIANGLES, 0, vertex_count);
-
+        // glDrawElements(GL_TRIANGLES, vertex_count, GL_UNSIGNED_INT, indices);
 
  
         glfwSwapBuffers(window);
         glfwPollEvents();
+        std::this_thread::sleep_for(33ms);
     }
  
     glfwDestroyWindow(window);
@@ -199,21 +210,101 @@ int main(void)
     glfwTerminate();
     exit(EXIT_SUCCESS);
 }
-void startFire(int x, int y);
+void startFire(Vertex *grid, int tile_count) {
+    int start_index = getGridIndex(tile_count / 2, tile_count/2, tile_count);
+    // int start_index = vertex_count - 6;
+    for (int i = 0; i < 6; i++) {
+        grid[start_index+i].col[1] = 0;
+        grid[start_index+i].col[0] = 1;
+    }
+}
 
-void updateGrid(Vertex *grid, int vertex_count) {
-    for (int i = 0; i < vertex_count; i+= 6) {
-        if (grid[i].col[0] == 0)
-            continue;
-        
-        int SCALE_FACTOR = 1;
-        if (i > 0) {
+void updateGrid(Vertex *grid, int tile_count) {
+    float fire_source_fuel;
+    for (int i = 0; i < tile_count; i++) {
+        int curRow = i*tile_count*2*3;
+        for (int j = 0; j < tile_count; j++) {
+            int src_index = curRow + j*6;
+            if ((fire_source_fuel = grid[src_index].col[0]) == 0)
+                continue;
+
+            float odds;
+            float SCALE_FACTOR = 1.f/5.f;
+            // float SCALE_FACTOR = 1.f;
+            // Left
+            if (j > 0) {
+                int target_index = getGridIndex(i, j-1, tile_count);
+                odds = grid[target_index].col[1] * fire_source_fuel * SCALE_FACTOR;
+                // std::cout << "(" << i << ", " << j-1 << "): " << odds << std::endl;
+                if (((float)rand())/((float)RAND_MAX) < odds) {
+                    for (int v = 0; v < 6; v++) {
+                        int vertex_index = target_index + v;
+                        grid[vertex_index].col[0] = grid[vertex_index].col[1];
+                        grid[vertex_index].col[1] = 0;
+                    }
+                }
+            }
+            // Right
+            if (j < tile_count -1) {
+                int target_index = getGridIndex(i, j+1, tile_count);
+                odds = grid[target_index].col[1] * fire_source_fuel * SCALE_FACTOR;
+                if (((float)rand())/((float)RAND_MAX) < odds) {
+                    for (int v = 0; v < 6; v++) {
+                        int vertex_index = target_index + v;
+                        grid[vertex_index].col[0] = grid[vertex_index].col[1];
+                        grid[vertex_index].col[1] = 0;
+                    }
+                }
+            }
+            // Down
+            if (i > 0) {
+                int target_index = getGridIndex(i-1, j, tile_count);
+                odds = grid[target_index].col[1] * fire_source_fuel * SCALE_FACTOR;
+                if (((float)rand())/((float)RAND_MAX) < odds) {
+                    for (int v = 0; v < 6; v++) {
+                        int vertex_index = target_index + v;
+                        grid[vertex_index].col[0] = grid[vertex_index].col[1];
+                        grid[vertex_index].col[1] = 0;
+                    }
+                }
+            }
+            // Up
+            if (i < tile_count-1) {
+                int target_index = getGridIndex(i+1, j, tile_count);
+                odds = grid[target_index].col[1] * fire_source_fuel * SCALE_FACTOR;
+                if (((float)rand())/((float)RAND_MAX) < odds) {
+                    for (int v = 0; v < 6; v++) {
+                        int vertex_index = target_index + v;
+                        grid[vertex_index].col[0] = grid[vertex_index].col[1];
+                        grid[vertex_index].col[1] = 0;
+                    }
+                }
+            }
+            for (int v = 0; v < 6; v++) {
+                grid[src_index+v].col[0] -= 0.01;
+                if (grid[src_index].col[0] < 0) {
+                    grid[src_index+v].col[0] = 0;
+                }
+            }
             
+            
+            
+
         }
 
     }
 }
- 
+inline int getGridIndex(int i, int j, int tile_count) {
+    return i*tile_count*2*3+ j*6;
+}
+
+unsigned int *genIndices(int vertex_count) {
+    unsigned int *indices = (unsigned int *)std::malloc(sizeof(unsigned int)*vertex_count);
+    for (int i = 0; i < vertex_count; i++) {
+        indices[i] = i;
+    }
+    return indices;
+}
 Vertex *genGrid(int tile_count) {
     float increment = 2.0/tile_count;
     Vertex *grid = (Vertex *) std::malloc(sizeof(Vertex)*2*3*tile_count*tile_count);

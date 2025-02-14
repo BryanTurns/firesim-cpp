@@ -221,20 +221,18 @@ void startFire(Vertex *grid, int tile_count) {
 
 void updateGrid(Vertex *grid, int tile_count) {
     float fire_source_fuel;
+    float SCALE_FACTOR = 1.f/10.f;
     for (int i = 0; i < tile_count; i++) {
         int curRow = i*tile_count*2*3;
         for (int j = 0; j < tile_count; j++) {
+            float odds;
             int src_index = curRow + j*6;
             if ((fire_source_fuel = grid[src_index].col[0]) == 0)
                 continue;
-
-            float odds;
-            float SCALE_FACTOR = 1.f/5.f;
-            // float SCALE_FACTOR = 1.f;
             // Left
             if (j > 0) {
                 int target_index = getGridIndex(i, j-1, tile_count);
-                odds = grid[target_index].col[1] * fire_source_fuel * SCALE_FACTOR;
+                odds = SCALE_FACTOR;
                 // std::cout << "(" << i << ", " << j-1 << "): " << odds << std::endl;
                 if (((float)rand())/((float)RAND_MAX) < odds) {
                     for (int v = 0; v < 6; v++) {
@@ -247,7 +245,7 @@ void updateGrid(Vertex *grid, int tile_count) {
             // Right
             if (j < tile_count -1) {
                 int target_index = getGridIndex(i, j+1, tile_count);
-                odds = grid[target_index].col[1] * fire_source_fuel * SCALE_FACTOR;
+                odds = SCALE_FACTOR;
                 if (((float)rand())/((float)RAND_MAX) < odds) {
                     for (int v = 0; v < 6; v++) {
                         int vertex_index = target_index + v;
@@ -259,7 +257,7 @@ void updateGrid(Vertex *grid, int tile_count) {
             // Down
             if (i > 0) {
                 int target_index = getGridIndex(i-1, j, tile_count);
-                odds = grid[target_index].col[1] * fire_source_fuel * SCALE_FACTOR;
+                odds = SCALE_FACTOR;
                 if (((float)rand())/((float)RAND_MAX) < odds) {
                     for (int v = 0; v < 6; v++) {
                         int vertex_index = target_index + v;
@@ -271,7 +269,7 @@ void updateGrid(Vertex *grid, int tile_count) {
             // Up
             if (i < tile_count-1) {
                 int target_index = getGridIndex(i+1, j, tile_count);
-                odds = grid[target_index].col[1] * fire_source_fuel * SCALE_FACTOR;
+                odds = SCALE_FACTOR;
                 if (((float)rand())/((float)RAND_MAX) < odds) {
                     for (int v = 0; v < 6; v++) {
                         int vertex_index = target_index + v;
@@ -281,15 +279,11 @@ void updateGrid(Vertex *grid, int tile_count) {
                 }
             }
             for (int v = 0; v < 6; v++) {
-                grid[src_index+v].col[0] -= 0.01;
+                grid[src_index+v].col[0] -= 0.005;
                 if (grid[src_index].col[0] < 0) {
                     grid[src_index+v].col[0] = 0;
                 }
             }
-            
-            
-            
-
         }
 
     }

@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdio.h>
+#include "grid.h"
 
 #include <iostream>
 #include <cmath>
@@ -23,6 +24,7 @@ typedef struct Vertex
     vec2 pos;
     vec3 col;
 } Vertex;
+
 
 
 static const Vertex vertices_const[6] =
@@ -85,6 +87,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 
 int main(void)
 {
+    std::cout << TILE_GRASS << std::endl;
     // Error checking
     int  success;
     char infoLog[512];

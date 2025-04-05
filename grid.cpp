@@ -41,14 +41,14 @@ void printGrid(std::vector<Tile *>& grid) {
     }   
     std::cout << std::endl;
 }
-void startFire(std::vector<Tile *>& grid, std::vector<int>& fireList) {
+void startFire(std::vector<Tile *>& grid, std::unordered_set<int>& fireList) {
     int fire_index = TILE_ROW_COUNT/2+(TILE_ROW_COUNT/2)*TILE_ROW_COUNT;
     grid[fire_index]->onFire = true;
-    fireList.push_back(fire_index);
+    fireList.insert(fire_index);
 }
-void updateGrid(std::vector<Tile*>& newGrid, std::vector<Tile*>& oldGrid, std::vector<int>& updateList, std::vector<int>& fireList) {
+void updateGrid(std::vector<Tile*>& newGrid, std::vector<Tile*>& oldGrid, std::unordered_set<int>& updateList, std::unordered_set<int>& fireList) {
     int fire_index;
-    std::vector<int> newFireList = fireList; 
+    std::unordered_set<int> newFireList = fireList; 
     for (auto it = fireList.begin(); it != fireList.end(); ++it) {
         fire_index = *it;
         int row = fire_index / TILE_ROW_COUNT;
@@ -59,40 +59,53 @@ void updateGrid(std::vector<Tile*>& newGrid, std::vector<Tile*>& oldGrid, std::v
         if (newGrid[fire_index]->fuel <= 0) {
             newGrid[fire_index]->fuel = 0;
             oldGrid[fire_index]->onFire = false;
-            newFireList.erase(it);
+            newFireList.erase(*it);
         }
-        updateList.push_back(fire_index);
+        updateList.insert(fire_index);
         // If the fire is not on the left most position in the screen
-        if (col != 0 && !oldGrid[fire_index-1]->onFire && oldGrid[fire_index]->fuel > 0 && checkIfFireLit()) {
-            newGrid[fire_index-1]->onFire = true;
-            newFireList.push_back(fire_index-1);
-            updateList.push_back(fire_index-1);
+        int left_index = fire_index-1;
+        if (col != 0 && !oldGrid[left_index]->onFire && checkIfFireLit()) {
+            newGrid[left_index]->onFire = true;
+            newFireList.insert(left_index);
+            updateList.insert(left_index);
+        }
+        int up_index = fire_index - TILE_ROW_COUNT;
+        if (row != 0 && !oldGrid[up_index]->onFire && checkIfFireLit()) {
+            newGrid[up_index]->onFire = true;
+            newFireList.insert(up_index);
+            updateList.insert(up_index);
+        }
+        int right_index = fire_index + 1;
+        if (col != TILE_ROW_COUNT - 1 && !oldGrid[right_index]->onFire && checkIfFireLit()) {
+            newGrid[right_index]->onFire = true;
+            newFireList.insert(right_index);
+            updateList.insert(right_index);
+        }
+        int down_index = fire_index + TILE_ROW_COUNT ;
+        if (row != TILE_ROW_COUNT - 1 && !oldGrid[right_index]->onFire && checkIfFireLit()) {
+            newGrid[down_index]->onFire = true;
+            newFireList.insert(down_index);
+            updateList.insert(down_index);
         }
         // update adjacent tiles. Remember to do any conditions with old grid and any updating to new grid. Also add to update list anything new. 
     }
-    fireList.swap(newFireList);
+    fireList = newFireList;
     updateOldGrid(newGrid, oldGrid, updateList);
 }
 bool checkIfFireLit() {
-    float odds = 1;
+    float odds = 0.5;
     float roll =  ((float)rand())/((float)RAND_MAX);
     if(roll < odds) 
         return true;
     else 
         return false;
 }
-// void indexToRow(int index) {
-//     return 
-// }
-void updateOldGrid(std::vector<Tile*>& newGrid, std::vector<Tile*>& oldGrid, std::vector<int>& updateList) {
+void updateOldGrid(std::vector<Tile*>& newGrid, std::vector<Tile*>& oldGrid, std::unordered_set<int>& updateList) {
     for (auto it = updateList.begin(); it != updateList.end(); ++it) {
         int updateIndex = *it;
-        printTile(newGrid[updateIndex]);
         oldGrid[updateIndex]->fuel = newGrid[updateIndex]->fuel;
         oldGrid[updateIndex]->onFire = newGrid[updateIndex]->onFire;
         oldGrid[updateIndex]->tileType = newGrid[updateIndex]->tileType;
     }
-    while (!updateList.empty()) 
-        updateList.pop_back();
-    printGrid(oldGrid);
+    updateList.clear();
 }

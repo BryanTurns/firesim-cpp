@@ -10,7 +10,7 @@ using namespace std::chrono_literals;
 
 int main() {
     // Initiate grids
-    static std::vector<Tile *> newGrid, oldGrid;
+    static std::array<Tile, TILE_COUNT> newGrid, oldGrid;
     static std::unordered_set<int> updateList, fireList;
     static std::array<Vertex, VERTEX_COUNT> graphicsBuffer;
 
@@ -120,21 +120,12 @@ int main() {
 
         glfwSwapBuffers(window);
         glfwPollEvents();
-        // printGrid(newGrid);
         std::this_thread::sleep_for(17ms);
         
-        // if (fireList.empty())
-        //     break;
+        if (fireList.empty()) {
+            sleep(10);
+            break;
+        }
     }
-    // while (true) {
-    //     updateGrid(newGrid, oldGrid, updateList, fireList);
-    //     if (fireList.empty())
-    //         break;
-    //     sleep(1);
-    // }
-    // printTile(newGrid[TILE_ROW_COUNT/2+(TILE_ROW_COUNT/2)*TILE_ROW_COUNT]);
-    // printTile(newGrid[TILE_ROW_COUNT/2+(TILE_ROW_COUNT/2)*TILE_ROW_COUNT-1]);
-    
-    // delete &oldGrid;
     return 0;
 }   

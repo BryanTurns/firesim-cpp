@@ -1,12 +1,12 @@
 #include "graphics.h"
 // Multiply by 6????
-void gridToGraphics(std::array<Vertex, VERTEX_COUNT>& graphicsBuffer, std::vector<Tile*>& grid, std::unordered_set<int>& updateList) {
+void gridToGraphics(std::array<Vertex, VERTEX_COUNT>& graphicsBuffer, std::array<Tile, TILE_COUNT>& grid, std::unordered_set<int>& updateList) {
     for (auto it = updateList.begin(); it != updateList.end(); ++it) {
         int graphicsIndex = 6 * (*it);
         int gridIndex = (*it);
-        if (grid[gridIndex]->onFire == true) {
+        if (grid[gridIndex].onFire == true) {
             for (int i = 0; i < 6; i++) {
-                graphicsBuffer[graphicsIndex + i].col[0] = grid[gridIndex]->fuel;
+                graphicsBuffer[graphicsIndex + i].col[0] = grid[gridIndex].fuel;
                 graphicsBuffer[graphicsIndex + i].col[1] = 0;
                 graphicsBuffer[graphicsIndex + i].col[2] = 0;
             }
@@ -14,13 +14,13 @@ void gridToGraphics(std::array<Vertex, VERTEX_COUNT>& graphicsBuffer, std::vecto
         else {
             for (int i = 0; i < 6; i++) {
                 graphicsBuffer[graphicsIndex + i].col[0] = 0;
-                graphicsBuffer[graphicsIndex + i].col[1] = grid[gridIndex]->fuel;
+                graphicsBuffer[graphicsIndex + i].col[1] = grid[gridIndex].fuel;
                 graphicsBuffer[graphicsIndex + i].col[2] = 0;
             }
         }
     }
 }
-void setGraphicsPosition(std::array<Vertex, VERTEX_COUNT>& graphicsBuffer, std::vector<Tile*>& grid) {
+void setGraphicsPosition(std::array<Vertex, VERTEX_COUNT>& graphicsBuffer, std::array<Tile, TILE_COUNT>& grid) {
     float increment = 2.0f/TILE_ROW_COUNT;
     int i = 0;
     for (auto it = grid.begin(); it != grid.end(); ++it, i++) {

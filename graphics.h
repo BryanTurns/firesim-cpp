@@ -15,8 +15,8 @@ typedef struct Vertex
     vec3 col;
 } Vertex;
 
-void setGraphicsPosition(std::array<Vertex, VERTEX_COUNT>& graphicsBuffer, std::vector<Tile*>& grid);
-void gridToGraphics(std::array<Vertex, VERTEX_COUNT>& graphicsBuffer, std::vector<Tile*>& grid, std::unordered_set<int>& updateList);
+void setGraphicsPosition(std::array<Vertex, VERTEX_COUNT>& graphicsBuffer, std::array<Tile, TILE_COUNT>& grid);
+void gridToGraphics(std::array<Vertex, VERTEX_COUNT>& graphicsBuffer, std::array<Tile, TILE_COUNT>& grid, std::unordered_set<int>& updateList);
 void checkGLError(const char *);
 void error_callback(int error, const char* description);
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);

@@ -1,66 +1,47 @@
-#define GLAD_GL_IMPLEMENTATION
-#include <glad/gl.h>
-#define GLFW_INCLUDE_NONE
-#include <GLFW/glfw3.h>
- 
-#include <linmath.h>
- 
-#include <stdlib.h>
-#include <stddef.h>
-#include <stdio.h>
 #include "grid.h"
+#include "graphics.h"
+#include "shaders.h"
 
-#include <iostream>
-#include <cmath>
-#include <random>
 #include <chrono>
 #include <thread>
 
 using namespace std::chrono_literals;
 
+
+// static const Vertex vertices_const[6] =
+// {
+//     { { -0.5f, -.5f}, { 0.f, 0.f, 0.f } }, // Bottom left: 0
+//     { {  -.5f, .5f}, { 0.f, 0.f, 0.f } }, // Top left: 1
+//     { {   .5f,  -.5f}, { 0.f, 0.f, 0.f } }, // Bottom right: 2
+//     { {  -0.5f, 0.5f}, { 0.f, 0.f, 0.f } }, // Top left: 3
+//     { {  .5f, .5f}, { 0.f, 0.f, 0.f } }, // Top right: 4
+//     { {   0.5f,  -0.5f}, { 0.f, 0.f, 0.f } } // Bottom right: 5
+// };
+
+// unsigned int indices_const[] = {
+//     0, 1, 2,
+//     3, 4, 5
+// };
  
-typedef struct Vertex
-{
-    vec2 pos;
-    vec3 col;
-} Vertex;
-
-
-
-static const Vertex vertices_const[6] =
-{
-    { { -0.5f, -.5f}, { 0.f, 0.f, 0.f } }, // Bottom left: 0
-    { {  -.5f, .5f}, { 0.f, 0.f, 0.f } }, // Top left: 1
-    { {   .5f,  -.5f}, { 0.f, 0.f, 0.f } }, // Bottom right: 2
-    { {  -0.5f, 0.5f}, { 0.f, 0.f, 0.f } }, // Top left: 3
-    { {  .5f, .5f}, { 0.f, 0.f, 0.f } }, // Top right: 4
-    { {   0.5f,  -0.5f}, { 0.f, 0.f, 0.f } } // Bottom right: 5
-};
-
-unsigned int indices_const[] = {
-    0, 1, 2,
-    3, 4, 5
-};
+// static const char* vertex_shader_text =
+// "#version 330\n"
+// "in vec3 vCol;\n"
+// "in vec2 vPos;\n"
+// "out vec3 color;\n"
+// "void main()\n"
+// "{\n"
+// "    gl_Position = vec4(vPos, 0.0, 1.0);\n"
+// "    color = vCol;\n"
+// "}\n";
  
-static const char* vertex_shader_text =
-"#version 330\n"
-"in vec3 vCol;\n"
-"in vec2 vPos;\n"
-"out vec3 color;\n"
-"void main()\n"
-"{\n"
-"    gl_Position = vec4(vPos, 0.0, 1.0);\n"
-"    color = vCol;\n"
-"}\n";
- 
-static const char* fragment_shader_text =
-"#version 330\n"
-"in vec3 color;\n"
-"out vec4 fragment;\n"
-"void main()\n"
-"{\n"
-"    fragment = vec4(color, 1.0);\n"
-"}\n";
+// static const char* fragment_shader_text =
+// "#version 330\n"
+// "in vec3 color;\n"
+// "out vec4 fragment;\n"
+// "void main()\n"
+// "{\n"
+// "    fragment = vec4(color, 1.0);\n"
+// "}\n";
  
 Vertex *genGrid(int tile_count);
 unsigned int *genIndices(int vertex_count);
@@ -69,21 +50,21 @@ void startFire(Vertex *grid, int vertex_count);
 void updateGrid(Vertex *grid, int tile_count);
 inline int getGridIndex(int i, int j, int tile_count);
 
-static void error_callback(int error, const char* description)
-{
-    fprintf(stderr, "Error: %s\n", description);
-}
+// static void error_callback(int error, const char* description)
+// {
+//     fprintf(stderr, "Error: %s\n", description);
+// }
  
-static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, GLFW_TRUE);
-}
+// static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+// {
+//     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+//         glfwSetWindowShouldClose(window, GLFW_TRUE);
+// }
  
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
-{
-    glViewport(0, 0, width, height);
-}  
+// void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+// {
+//     glViewport(0, 0, width, height);
+// }  
 
 int main(void)
 {
@@ -328,22 +309,22 @@ Vertex *genGrid(int tile_count) {
     return grid;
 }
 
-void checkGLError(const char *text) {
-    GLenum err;
+// void checkGLError(const char *text) {
+//     GLenum err;
     
-    while ((err = glGetError()) != GL_NO_ERROR) {
-        std::cout << text << ": ";
-        if (err == GL_INVALID_ENUM) 
-            std::cout << "ENUM" << std::endl;
-        else if (err == GL_INVALID_OPERATION) 
-            std::cout << "OPERATION" << std::endl;
-        else if (err == GL_INVALID_VALUE)
-            std::cout << "VALUE" << std::endl;
-        else if (err == GL_INVALID_FRAMEBUFFER_OPERATION)
-            std::cout << "FRAME OPP" << std::endl;
-        else if (err == GL_INVALID_OPERATION) 
-            std::cout<< "OPP" << std::endl;
-        else if (err == GL_OUT_OF_MEMORY)
-            std::cout << "MEMORY" << std::endl;
-    }
-}
+//     while ((err = glGetError()) != GL_NO_ERROR) {
+//         std::cout << text << ": ";
+//         if (err == GL_INVALID_ENUM) 
+//             std::cout << "ENUM" << std::endl;
+//         else if (err == GL_INVALID_OPERATION) 
+//             std::cout << "OPERATION" << std::endl;
+//         else if (err == GL_INVALID_VALUE)
+//             std::cout << "VALUE" << std::endl;
+//         else if (err == GL_INVALID_FRAMEBUFFER_OPERATION)
+//             std::cout << "FRAME OPP" << std::endl;
+//         else if (err == GL_INVALID_OPERATION) 
+//             std::cout<< "OPP" << std::endl;
+//         else if (err == GL_OUT_OF_MEMORY)
+//             std::cout << "MEMORY" << std::endl;
+//     }
+// }

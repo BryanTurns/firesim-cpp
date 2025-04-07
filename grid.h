@@ -26,7 +26,7 @@ typedef struct Tile
 } Tile;
 // Tile properties
 const std::array<std::string, TILE_TYPE_COUNT> TILE_NAME_TABLE = {"grass"};
-const std::array<float, TILE_TYPE_COUNT> TILE_BURNRATE_TABLE = {0.1};
+const std::array<float, TILE_TYPE_COUNT> TILE_BURNRATE_TABLE = {0.01};
 // Functions
 void initiateGrid(std::vector<Tile *>& newGrid, std::vector<Tile *>& oldGrid);
 void startFire(std::vector<Tile *>& grid, std::unordered_set<int>& fireList);

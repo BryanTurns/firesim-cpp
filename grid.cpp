@@ -1,4 +1,5 @@
 #include "grid.h"
+#include "graphics.h"
 #include <iomanip>
 
 void initiateGrid(std::vector<Tile *>& newGrid, std::vector<Tile *>& oldGrid) {
@@ -107,5 +108,5 @@ void updateOldGrid(std::vector<Tile*>& newGrid, std::vector<Tile*>& oldGrid, std
         oldGrid[updateIndex]->onFire = newGrid[updateIndex]->onFire;
         oldGrid[updateIndex]->tileType = newGrid[updateIndex]->tileType;
     }
-    updateList.clear();
+    // updateList.clear();
 }
